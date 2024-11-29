@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BLNLS IMO WSS</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <div class="logo">
+          <a href="https://apps.evsu.edu.ph">
+            <img src="nia.png" alt="EVSU Logo" />
+          </a>
+        </div>
+        <ul>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="index.html" target="_blank">WSS GIS Portal</a></li>
+        </ul>
+      </div>
+      <div class="main-content">
+        <section id="dashboard">
+          <h2>STATUS OF BLNLS IMO WSS</h2>
+          <p>As of October 28, 2024</p>
+          <div class="dashboard-stats">
+            <div class="stat">
+              <h3>National Irrigation Systems (NIS)</h3>
+              <p>100% Completed</p>
+              <canvas id="nisPieChart" width="200" height="200"></canvas>
+            </div>
+            <div class="stat">
+              <h3>Communal Irrigation Systems (CIS)</h3>
+              <p>64% Completed</p>
+              <canvas id="cisPieChart" width="200" height="200"></canvas>
+            </div>
+          </div>
+        </section>
+        <section id="extension-programs">
+          <h2>National Irrigation Systems</h2>
+          <p>As of October 28, 2024</p>
+          <ul class="program-list">
+            <li>
+              <p></p>
+            </li>
+          </ul>
+        </section>
+        <section id="about">
+          <h2>Communal Irrigation Systems</h2>
+          <p>As of October 28, 2024</p>
+        </section>
+        <section id="contact">
+          <h2>Contact Us</h2>
+          <p>
+            For inquiries and concerns, please contact us at:
+            <br />
+            Email: wss.edu.ph
+            <br />
+            Phone: +63 53 323 4567
+          </p>
+        </section>
+      </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+      // Get the canvas elements
+      const nisCtx = document.getElementById("nisPieChart").getContext("2d");
+      const cisCtx = document.getElementById("cisPieChart").getContext("2d");
+
+      // Define your chart data (replace with your actual data)
+      const nisData = {
+        labels: ["Completed"],
+        datasets: [
+          {
+            label: "NIS",
+            data: [100],
+            backgroundColor: ["rgb(54, 162, 235)"],
+            hoverOffset: 4,
+          },
+        ],
+      };
+
+      const cisData = {
+        labels: ["Ongoing", "Completed"],
+        datasets: [
+          {
+            label: "CIS",
+            data: [36, 64],
+            backgroundColor: ["rgb(255, 99, 132)", "rgb(54, 162, 235)"],
+            hoverOffset: 4,
+          },
+        ],
+      };
+
+      // Configure the charts
+      const nisConfig = {
+        type: "pie",
+        data: nisData,
+      };
+
+      const cisConfig = {
+        type: "pie",
+        data: cisData,
+      };
+
+      // Create the charts
+      const nisPieChart = new Chart(nisCtx, nisConfig);
+      const cisPieChart = new Chart(cisCtx, cisConfig);
+    </script>
+  </body>
+</html>

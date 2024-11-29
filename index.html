@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GIS Map</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+      #map {
+        margin-top: 10px;
+        width: 100%;
+        height: 640px;
+        z-index: 0;
+      }
+
+      #header {
+        background-color: rgb(20, 67, 2);
+        color: rgba(255, 255, 255, 0.859);
+        padding: 10px;
+        font-size: 32px;
+        font-weight: bold;
+        text-align: center;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      #container {
+        position: absolute;
+        top: 100px;
+        right: 15px;
+        background-color: rgb(20, 67, 2);
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 100;
+        width: 280px;
+        max-height: 300px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      #search-bar {
+        width: 260px;
+        height: 30px;
+        margin-bottom: 10px;
+      }
+
+      #container button {
+        display: block;
+        margin: 5px 0;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        cursor: pointer;
+        height: 45px;
+      }
+
+      #container button:hover {
+        background-color: #ddd;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background-color: #f1f1f1;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="header">BLNLS IMO WSS PHYSICAL INVENTORY - CIS</div>
+    <div id="container">
+      <input type="text" id="search-bar" placeholder="Search System here" />
+    </div>
+    <div id="map"></div>
+    <script>
+      const map = L.map("map").setView([10.8, 124.9999], 9);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      let geojsonLayer = L.geoJson(null).addTo(map);
+
+      fetch("sample.geojson")
+        .then((response) => response.json())
+        .then((data) => {
+          const uniqueCIS = Array.from(
+            new Set(data.features.map((feature) => feature.properties.CIS))
+          ).sort();
+
+          uniqueCIS.forEach((cis) => {
+            const button = document.createElement("button");
+
+            const formattedCIS = cis
+              .replace(/_/g, " ")
+              .replace(/\bris\b/i, "RIS")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+
+            button.textContent = formattedCIS;
+            button.addEventListener("click", () => {
+              const filteredData = {
+                type: "FeatureCollection",
+                features: data.features.filter(
+                  (feature) => feature.properties.CIS === cis
+                ),
+              };
+
+              geojsonLayer.clearLayers();
+              L.geoJSON(filteredData, {
+                style: function (feature) {
+                  switch (feature.geometry.type) {
+                    case "MultiPolygon":
+                      return {
+                        fillColor: "green",
+                        fillOpacity: 0.5,
+                        color: "black",
+                        weight: 1,
+                      };
+                    case "MultiLineString":
+                      const randomColor =
+                        "#" + Math.floor(Math.random() * 16777215).toString(16);
+                      return {
+                        color: randomColor,
+                        weight: 10,
+                      };
+                    case "Point":
+                      return {
+                        radius: 5,
+                        fillColor: "yellow",
+                        color: "red",
+                        fillOpacity: 0.7,
+                      };
+                    default:
+                      return {};
+                  }
+                },
+                pointToLayer: function (feature, latlng) {
+                  return L.circleMarker(latlng, {
+                    radius: 5,
+                    fillColor: "red",
+                    color: "red",
+                    fillOpacity: 0.7,
+                  });
+                },
+                onEachFeature: function (feature, layer) {
+                  const imageUrl1 =
+                    feature.properties.Point_and_shoot_Use_mera_to_take_a_photo;
+                  const imageUrl2 =
+                    feature.properties
+                      .Point_and_shoot_Use_mera_to_take_a_photo_001;
+
+                  //const fullImageUrl1 = `pics/${feature.properties._uuid}/${imageUrl1}`; //for NIS - change CIS to Choose_NIS
+                  // const fullImageUrl2 = `pics/${feature.properties._uuid}/${imageUrl2}`;//
+                  const fullImageUrl1 = `${feature.properties.Point_and_shoot_Use_mera_to_take_a_photo_URL}`; //
+                  const fullImageUrl2 = `${feature.properties.Point_and_shoot_Use_mera_to_take_a_photo_001_URL}`; //
+
+                  const originalFillColor = layer.options.fillColor;
+                  const originalFillOpacity = layer.options.fillOpacity;
+
+                  layer.on({
+                    mouseover: function (e) {
+                      this.setStyle({
+                        fillColor: "#ffcc00",
+                        fillOpacity: 0.8,
+                      });
+                    },
+                    mouseout: function (e) {
+                      this.setStyle({
+                        fillColor: originalFillColor,
+                        fillOpacity: originalFillOpacity,
+                      });
+                    },
+                  });
+
+                  const popupContent = `
+<b>Name of System:</b> ${
+                    feature.properties.CIS
+                      ? feature.properties.CIS.replace(/_/g, " ")
+                          .replace(/\bris\b/i, "RIS")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                      : ""
+                  } <br>
+${
+  feature.properties.Name_of_Facility_Structure
+    ? `<b>Structure:</b> ${feature.properties.Name_of_Facility_Structure} <br>`
+    : ""
+}${
+                    feature.properties.Remarks
+                      ? `<b>Remarks:</b> ${feature.properties.Remarks} <br>`
+                      : ""
+                  }
+${
+  feature.geometry.coordinates
+    ? `<b>Coordinates:</b> ${feature.geometry.coordinates
+        .slice(0, 2)
+        .join(", ")} <br>`
+    : ""
+}
+
+${
+  imageUrl1
+    ? `<a href="#" onclick="openImageInPopup('${fullImageUrl1}')">
+                    <img src="${fullImageUrl1}" alt="Image 1" style="width: 200px; height: 150px; display: block; margin: 0 auto;">
+                  </a><br>`
+    : ""
+}
+${
+  imageUrl2
+    ? `<a href="#" onclick="openImageInPopup('${fullImageUrl2}')">
+                    <img src="${fullImageUrl2}" alt="Image 2" style="width: 200px; height: 150px; display: block; margin: 0 auto;">
+                  </a><br>`
+    : ""
+}
+
+${
+  feature.properties.lot_code
+    ? `<b>Lot Number:</b> ${feature.properties.lot_code} <br>`
+    : ""
+}
+${feature.properties.ia ? `<b>IA:</b> ${feature.properties.ia} <br>` : ""}
+${feature.properties.area ? `<b>Area:</b> ${feature.properties.area} <br>` : ""}
+  
+    
+
+
+`;
+
+                  layer.bindPopup(popupContent);
+                },
+              }).addTo(geojsonLayer);
+
+              const bounds = L.geoJSON(filteredData).getBounds();
+
+              map.fitBounds(bounds);
+            });
+
+            document.getElementById("container").appendChild(button);
+          });
+
+          const searchBar = document.getElementById("search-bar");
+          searchBar.addEventListener("input", (event) => {
+            const searchTerm = event.target.value.toLowerCase();
+
+            const buttons = document.querySelectorAll("#container button");
+
+            buttons.forEach((button) => {
+              const buttonText = button.textContent.toLowerCase();
+              if (buttonText.includes(searchTerm)) {
+                button.style.display = "block";
+              } else {
+                button.style.display = "none";
+              }
+            });
+          });
+        })
+        .catch((error) => {
+          console.error("Error loading GeoJSON data:", error);
+        });
+
+      function openImageInPopup(imageUrl) {
+        const imageWindow = window.open(
+          imageUrl,
+          "_blank",
+          "width=1000,height=800,resizable=yes,scrollbars=yes"
+        );
+
+        const closeButton = imageWindow.document.createElement("button");
+        closeButton.textContent = "Close";
+
+        closeButton.addEventListener("click", () => {
+          imageWindow.close();
+        });
+
+        imageWindow.document.body.appendChild(closeButton);
+      }
+    </script>
+  </body>
+</html>
