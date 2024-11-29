@@ -12,72 +12,83 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
+      /* Basic Reset */
       html,
       body {
         margin: 0;
         padding: 0;
         height: 100%;
-        overflow: hidden; /* Prevents scrollbars from appearing on the body */
+        overflow: hidden; /* Prevents scrollbars on the body */
+        font-family: Arial, sans-serif;
       }
 
+      /* Header styling */
       #header {
         background-color: rgb(20, 67, 2);
         color: rgba(255, 255, 255, 0.859);
         padding: 10px;
-        font-size: 32px;
+        font-size: 28px;
         font-weight: bold;
         text-align: center;
         box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
         z-index: 1000; /* Ensures the header overlays the map */
-        position: absolute; /* Or 'fixed' to keep it at the top even when scrolling */
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
+        box-sizing: border-box;
       }
 
+      /* Map Styling */
       #map {
         width: 100%;
         height: 100vh; /* This makes the map fill the entire viewport height */
         z-index: 0;
-        overflow: hidden; /* Prevents scrollbars on the map */
       }
 
+      /* Sidebar container */
       #container {
         position: absolute;
-        top: 100px;
-        right: 15px;
+        top: 80px; /* Adjust for header height */
+        right: 10px;
         background-color: rgb(20, 67, 2);
         padding: 10px;
         border-radius: 5px;
         z-index: 100;
-        width: 280px;
-        max-height: 300px;
+        width: 90%; /* Take up most of the screen width on mobile */
+        max-width: 300px; /* Maximum width on larger screens */
+        max-height: 60vh; /* Set maximum height (60% of viewport height) */
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
+        overflow-y: auto; /* Allows scrollbars if content overflows */
+        box-sizing: border-box;
       }
 
+      /* Search bar */
       #search-bar {
-        width: 260px;
-        height: 30px;
+        width: 100%;
+        height: 40px;
         margin-bottom: 10px;
+        padding: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
       }
 
+      /* Buttons in the sidebar */
       #container button {
         display: block;
         margin: 5px 0;
-        padding: 10px;
+        padding: 12px;
         border: 1px solid #ccc;
         border-radius: 5px;
         background-color: #f2f2f2;
         cursor: pointer;
-        height: 45px;
+        height: auto;
+        font-size: 16px;
+        text-align: left;
       }
 
-      #container button:hover {
-        background-color: #ddd;
-      }
-
+      /* Scrollbar styling */
       ::-webkit-scrollbar {
         width: 10px;
       }
@@ -94,8 +105,33 @@
       ::-webkit-scrollbar-thumb:hover {
         background-color: #555;
       }
-      .leaflet-control-zoom {
-        top: 60px; /* Adjust this value to move the zoom control down */
+
+      /* Media Query for small screens */
+      @media (max-width: 600px) {
+        #header {
+          font-size: 24px;
+        }
+
+        #container {
+          width: 100%;
+          top: 70px; /* Adjust for smaller screen */
+        }
+
+        #search-bar {
+          width: 100%;
+        }
+
+        #container button {
+          font-size: 14px; /* Smaller font size for buttons */
+          padding: 10px;
+        }
+      }
+
+      @media (max-width: 400px) {
+        #container button {
+          font-size: 12px; /* Even smaller font size for very small screens */
+          padding: 8px;
+        }
       }
     </style>
   </head>
@@ -105,9 +141,11 @@
       <input type="text" id="search-bar" placeholder="Search System here" />
     </div>
     <div id="map"></div>
+
     <script>
       const map = L.map("map", {
         attributionControl: false, // This disables the default attribution control
+        zoomControl: false, // Disable the default zoom control
       }).setView([10.8, 124.9999], 9);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -116,6 +154,11 @@
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
+      L.control
+        .zoom({
+          position: "bottomleft", // Position the zoom control at the bottom left
+        })
+        .addTo(map);
       let geojsonLayer = L.geoJson(null).addTo(map);
 
       fetch("sample.geojson")
@@ -186,10 +229,8 @@
                     feature.properties
                       .Point_and_shoot_Use_mera_to_take_a_photo_001;
 
-                  //const fullImageUrl1 = `pics/${feature.properties._uuid}/${imageUrl1}`; //for NIS - change CIS to Choose_NIS
-                  // const fullImageUrl2 = `pics/${feature.properties._uuid}/${imageUrl2}`;//
-                  const fullImageUrl1 = `${feature.properties.Point_and_shoot_Use_mera_to_take_a_photo_URL}`; //
-                  const fullImageUrl2 = `${feature.properties.Point_and_shoot_Use_mera_to_take_a_photo_001_URL}`; //
+                  const fullImageUrl1 = `${feature.properties.Point_and_shoot_Use_mera_to_take_a_photo_URL}`;
+                  const fullImageUrl2 = `${feature.properties.Point_and_shoot_Use_mera_to_take_a_photo_001_URL}`;
 
                   const originalFillColor = layer.options.fillColor;
                   const originalFillOpacity = layer.options.fillOpacity;
@@ -209,65 +250,28 @@
                     },
                   });
 
-                  const popupContent = `
-<b>Name of System:</b> ${
-                    feature.properties.CIS
-                      ? feature.properties.CIS.replace(/_/g, " ")
-                          .replace(/\bris\b/i, "RIS")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())
-                      : ""
-                  } <br>
-${
-  feature.properties.Name_of_Facility_Structure
-    ? `<b>Structure:</b> ${feature.properties.Name_of_Facility_Structure} <br>`
-    : ""
-}${
-                    feature.properties.Remarks
-                      ? `<b>Remarks:</b> ${feature.properties.Remarks} <br>`
+                  const popupContent = ` 
+                  <b>Name of System:</b> ${feature.properties.CIS} <br>
+                  <b>Coordinates:</b> ${feature.geometry.coordinates
+                    .slice(0, 2)
+                    .join(", ")} <br>
+                  ${
+                    imageUrl1
+                      ? `<a href="#" onclick="openImageInPopup('${fullImageUrl1}')"><img src="${fullImageUrl1}" alt="Image 1" style="width: 200px; height: 150px;"></a><br>`
                       : ""
                   }
-${
-  feature.geometry.coordinates
-    ? `<b>Coordinates:</b> ${feature.geometry.coordinates
-        .slice(0, 2)
-        .join(", ")} <br>`
-    : ""
-}
-
-${
-  imageUrl1
-    ? `<a href="#" onclick="openImageInPopup('${fullImageUrl1}')">
-                    <img src="${fullImageUrl1}" alt="Image 1" style="width: 200px; height: 150px; display: block; margin: 0 auto;">
-                  </a><br>`
-    : ""
-}
-${
-  imageUrl2
-    ? `<a href="#" onclick="openImageInPopup('${fullImageUrl2}')">
-                    <img src="${fullImageUrl2}" alt="Image 2" style="width: 200px; height: 150px; display: block; margin: 0 auto;">
-                  </a><br>`
-    : ""
-}
-
-${
-  feature.properties.lot_code
-    ? `<b>Lot Number:</b> ${feature.properties.lot_code} <br>`
-    : ""
-}
-${feature.properties.ia ? `<b>IA:</b> ${feature.properties.ia} <br>` : ""}
-${feature.properties.area ? `<b>Area:</b> ${feature.properties.area} <br>` : ""}
-  
-    
-
-
-`;
+                  ${
+                    imageUrl2
+                      ? `<a href="#" onclick="openImageInPopup('${fullImageUrl2}')"><img src="${fullImageUrl2}" alt="Image 2" style="width: 200px; height: 150px;"></a><br>`
+                      : ""
+                  }
+                  `;
 
                   layer.bindPopup(popupContent);
                 },
               }).addTo(geojsonLayer);
 
               const bounds = L.geoJSON(filteredData).getBounds();
-
               map.fitBounds(bounds);
             });
 
